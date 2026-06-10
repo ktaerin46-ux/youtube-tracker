@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>유튜브 성과 트래커</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f0f0f8;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ── 상단 헤더 ── */
+    .top-banner {
+      background: linear-gradient(135deg, #6c63ff 0%, #9b59b6 100%);
+      padding: 14px 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .top-banner .logo {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .top-banner h1 { font-size: 16px; font-weight: 700; color: #fff; }
+    .top-banner .tagline { margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.75); }
+
+    /* ── 컨텐츠 ── */
+    .content { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    .page-title { font-size: 22px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+    .page-sub   { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+    /* ── 전체 요약 카드 ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .sc {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(108,99,255,0.07);
+      border: 1px solid #ebebf5;
+    }
+    .sc.wide { grid-column: span 3; }
+    .sc.span2 { grid-column: span 2; }
+    .sc .sl { font-size: 10px; font-weight: 600; color: #999; margin-bottom: 5px; letter-spacing: 0.3px; }
+    .sc .sv { font-size: 24px; font-weight: 800; color: #1a1a2e; display: flex; align-items: baseline; gap: 3px; }
+    .sc .sv small { font-size: 13px; font-weight: 500; color: #bbb; }
+    .sc.blue   .sv { color: #2563eb; }
+    .sc.orange .sv { color: #d97706; }
+    .sc.violet .sv { color: #7c3aed; }
+    .sc.gold   .sv { color: #b45309; }
+    .sc.purple .sv { color: #6c63ff; }
+    .sc.yellow .sv { color: #f59e0b; }
+
+    /* ── 채널 섹션 ── */
+    .channel-section { margin-bottom: 36px; }
+
+    .channel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      margin-bottom: 0;
+      border-bottom: 3px solid #e8e5ff;
+    }
+
+    .channel-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .channel-name-wrap {
+      display: flex; align-items: center; gap: 6px;
+      flex: 1; min-width: 0;
+    }
+
+    .channel-name-input {
+      font-size: 17px; font-weight: 800;
+      color: #1a1a2e;
+      background: transparent;
+      border: none; outline: none;
+      padding: 3px 8px;
+      border-radius: 8px;
+      min-width: 60px;
+      max-width: 260px;
+      transition: background 0.15s;
+    }
+    .channel-name-input:hover { background: #eeecff; }
+    .channel-name-input:focus { background: #eeecff; }
+
+    .channel-count {
+      font-size: 12px; color: #bbb; font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .ch-add-btn {
+      background: #fff;
+      border: 1.5px solid #d0cff0;
+      border-radius: 8px;
+      color: #6c63ff;
+      font-size: 12px; font-weight: 700;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .ch-add-btn:hover { background: #f5f3ff; border-color: #a5b4fc; }
+
+    .ch-del-btn {
+      background: none; border: none;
+      color: #ccc; font-size: 13px;
+      cursor: pointer; padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .ch-del-btn:hover { color: #ef4444; background: #fef2f2; }
+
+    /* ── 테이블 ── */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      border: 1px solid #ebebf5;
+      border-top: none;
+      border-radius: 0 0 0 0;
+      margin-bottom: 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      white-space: nowrap;
+      min-width: 100%;
+    }
+
+    thead tr {
+      background: #f8f7ff;
+      border-bottom: 2px solid #e8e5ff;
+    }
+    th {
+      font-size: 10px; font-weight: 700;
+      color: #7a7a9a;
+      letter-spacing: 0.4px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    th.h-blue   { color: #2563eb; }
+    th.h-orange { color: #d97706; }
+    th.h-violet { color: #7c3aed; }
+    th.h-gold   { color: #b45309; }
+
+    tbody tr {
+      border-bottom: 1px solid #f2f2f8;
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #faf9ff; }
+    tbody tr.is-ad { background: #fffef0; }
+    tbody tr.is-ad:hover { background: #fffce8; }
+
+    td { padding: 0; vertical-align: middle; }
+    td.ic { background: #fff; }
+    td.ic:focus-within { background: #f8f7ff; }
+    tbody tr:hover td.ic { background: #faf9ff; }
+    tbody tr.is-ad td.ic { background: #fffef0; }
+
+    /* sticky 열 */
+    .s1 {
+      position: sticky; left: 0; z-index: 2;
+      background: #fff;
+      border-right: 1px solid #f2f2f8;
+    }
+    .s2 {
+      position: sticky; left: 52px; z-index: 2;
+      background: #fff;
+      border-right: 2px solid #e8e5ff;
+    }
+    tbody tr:hover .s1, tbody tr:hover .s2 { background: #faf9ff; }
+    tbody tr.is-ad .s1, tbody tr.is-ad .s2 { background: #fffef0; }
+
+    /* 입력 셀 */
+    .cell-input {
+      background: transparent; border: none;
+      color: #1a1a2e;
+      font-size: 13px; font-weight: 500;
+      padding: 12px 10px;
+      width: 100%; outline: none;
+      text-align: right; font-family: inherit;
+      -moz-appearance: textfield;
+    }
+    .cell-input::-webkit-outer-spin-button,
+    .cell-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .cell-input::placeholder { color: #ccc; }
+    .cell-input.left { text-align: left; }
+
+    .num-cell   { width: 52px; min-width: 52px; }
+    .title-cell { min-width: 150px; max-width: 200px; }
+
+    /* 계산 결과 셀 */
+    .calc-cell {
+      text-align: center; min-width: 80px;
+      padding: 0 10px; font-size: 13px; font-weight: 700;
+    }
+    .calc-cell.blue   { color: #1d4ed8; background: #eff6ff; }
+    .calc-cell.orange { color: #c2700a; background: #fff7ed; }
+    .calc-cell.violet { color: #6d28d9; background: #f5f3ff; }
+    .calc-cell.gold   { color: #92400e; background: #fefce8; }
+
+    /* 콘텐츠 유형 */
+    .type-cell { text-align: center; min-width: 112px; padding: 0 8px; }
+    .type-select {
+      appearance: none; -webkit-appearance: none;
+      border: 1.5px solid #e8e8f5;
+      border-radius: 20px;
+      font-size: 11px; font-weight: 700; font-family: inherit;
+      padding: 5px 10px; cursor: pointer; outline: none;
+      text-align: center; width: 100%;
+      transition: all 0.15s;
+    }
+    .type-select.empty   { background: #f8f8fc; color: #ccc; }
+    .type-select.pulling { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .type-select.key     { background: #fff7ed; color: #c2700a; border-color: #fed7aa; }
+    .type-select:focus   { border-color: #6c63ff; box-shadow: 0 0 0 2px rgba(108,99,255,0.12); }
+
+    /* 광고 체크박스 */
+    .ad-cell { text-align: center; min-width: 48px; padding: 0 8px; }
+    .ad-label { display: inline-flex; align-items: center; cursor: pointer; }
+    .ad-label input[type=checkbox] { display: none; }
+    .ad-check-box {
+      width: 22px; height: 22px;
+      border: 2px solid #e0e0f0; border-radius: 6px;
+      background: #f8f8fc;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .ad-label:hover .ad-check-box { border-color: #f59e0b; background: #fffbeb; }
+    .ad-label input:checked + .ad-check-box {
+      background: #f59e0b; border-color: #f59e0b;
+    }
+    .ad-label input:checked + .ad-check-box::after { content: '✓'; font-weight: 800; color: #fff; font-size: 12px; }
+
+    /* 링크 셀 */
+    .link-cell { text-align: center; min-width: 40px; width: 40px; padding: 0 3px; }
+    .link-btn {
+      background: #f4f4fb; border: 1px solid #e0e0f0; border-radius: 6px;
+      color: #aaa; font-size: 13px; width: 28px; height: 26px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .link-btn:hover { border-color: #a5b4fc; color: #6c63ff; background: #f0eeff; }
+    .link-btn.set   { border-color: #c4b5fd; color: #6c63ff; background: #f5f3ff; }
+
+    /* 삭제 버튼 */
+    .del-cell { text-align: center; width: 36px; min-width: 36px; }
+    .del-btn {
+      background: none; border: none; color: #ddd; font-size: 14px;
+      cursor: pointer; padding: 4px 6px; border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .del-btn:hover { color: #ef4444; background: #fef2f2; }
+
+    /* 단축 URL 셀 */
+    .short-url-cell { text-align: center; min-width: 100px; padding: 0 8px; }
+
+    .short-url-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #f0fdf4; border: 1.5px solid #bbf7d0;
+      border-radius: 20px; padding: 5px 11px;
+      font-size: 11px; font-weight: 700; color: #16a34a;
+      cursor: pointer; transition: all 0.15s;
+      max-width: 130px; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis;
+    }
+    .short-url-btn:hover { background: #dcfce7; border-color: #86efac; }
+    .short-url-btn.empty {
+      background: #f8f8fc; border-color: #e8e8f5;
+      color: #ccc; font-weight: 500;
+    }
+    .short-url-btn.empty:hover { border-color: #a5b4fc; color: #6c63ff; background: #f0eeff; }
+    .short-url-btn.copied {
+      background: #eff6ff; border-color: #bfdbfe; color: #2563eb;
+    }
+
+    /* 복사 완료 토스트 */
+    .copy-toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: #fff;
+      font-size: 13px; font-weight: 600;
+      padding: 10px 20px; border-radius: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 999;
+    }
+    .copy-toast.show { opacity: 1; }
+
+    /* 업데이트 시각 */
+    .updated-cell {
+      text-align: center; min-width: 76px;
+      font-size: 10px; color: #ccc; padding: 0 8px;
+    }
+
+    /* ── 채널 하단 미니 통계 ── */
+    .channel-footer {
+      display: flex; gap: 0;
+      background: #f8f7ff;
+      border: 1px solid #ebebf5;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+    }
+    .ch-stat {
+      flex: 1; padding: 9px 12px; text-align: center;
+      border-right: 1px solid #ebebf5;
+    }
+    .ch-stat:last-child { border-right: none; }
+    .ch-stat .cs-label { font-size: 9px; color: #aaa; font-weight: 600; letter-spacing: 0.3px; margin-bottom: 3px; }
+    .ch-stat .cs-val   { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+    .ch-stat.blue  .cs-val { color: #2563eb; }
+    .ch-stat.orange .cs-val { color: #c2700a; }
+    .ch-stat.violet .cs-val { color: #6d28d9; }
+
+    /* ── 채널 추가 버튼 ── */
+    .add-channel-btn {
+      width: 100%; background: #fff;
+      border: 2px dashed #d0cff0; border-radius: 14px;
+      color: #aaa; font-size: 13px; font-weight: 700;
+      padding: 14px; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .add-channel-btn:hover { border-color: #6c63ff; color: #6c63ff; background: #f8f7ff; }
+
+    /* ── 구분선 ── */
+    .sec-title {
+      font-size: 13px; font-weight: 700; color: #1a1a2e;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sec-title::after { content: ''; flex: 1; height: 1px; background: #e8e8f5; }
+
+    /* ── URL 팝오버 ── */
+    #url-popover {
+      position: fixed; background: #fff;
+      border: 1px solid #e0e0f0; border-radius: 12px;
+      padding: 14px 16px; z-index: 200; display: none;
+      min-width: 300px;
+      box-shadow: 0 12px 36px rgba(108,99,255,0.15);
+    }
+    #url-popover .pop-label { font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+    #url-popover input {
+      width: 100%; background: #f8f7ff;
+      border: 1.5px solid #d0cff0; border-radius: 8px;
+      color: #1a1a2e; font-size: 13px; padding: 9px 12px; outline: none;
+    }
+    #url-popover input:focus { border-color: #6c63ff; background: #fff; }
+    #url-popover .pop-actions { display: flex; gap: 8px; margin-top: 10px; }
+    #url-popover button {
+      flex: 1; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; padding: 9px; cursor: pointer;
+    }
+    #url-popover button.cancel  { background: #f4f4fb; color: #888; }
+    #url-popover button.confirm { background: #6c63ff; color: #fff; }
+    #url-popover button:hover   { opacity: 0.85; }
+
+    .hint { text-align: center; font-size: 11px; color: #ccc; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="top-banner">
+  <div class="logo">📊</div>
+  <h1>유튜브 성과 트래커</h1>
+  <span class="tagline">채널별 롱폼 영상 → 고정댓글 링크 → 랜딩페이지 전환 관리</span>
+</div>
+
+<div class="content">
+  <p class="page-title">성과 대시보드</p>
+  <p class="page-sub">채널과 영상별 링크 클릭률·DB 전환율을 한눈에 비교하세요</p>
+
+  <!-- 전체 요약 -->
+  <div class="summary-grid">
+    <div class="sc">
+      <div class="sl">총 조회수</div>
+      <div class="sv" id="sum-views">0<small>회</small></div>
+    </div>
+    <div class="sc">
+      <div class="sl">총 링크 클릭</div>
+      <div class="sv" id="sum-clicks">0<small>회</small></div>
+    </div>
+    <div class="sc">
+      <div class="sl">총 DB 수집</div>
+      <div class="sv" id="sum-db">0<small>건</small></div>
+    </div>
+    <div class="sc blue">
+      <div class="sl">평균 링크 클릭률 · 클릭수÷조회수</div>
+      <div class="sv" id="avg-ctr">—<small>%</small></div>
+    </div>
+    <div class="sc orange">
+      <div class="sl">평균 1차 전환율(DB) · DB수÷클릭수</div>
+      <div class="sv" id="avg-cvr">—<small>%</small></div>
+    </div>
+    <div class="sc violet">
+      <div class="sl">평균 합산 · 링크 클릭률+1차 전환율</div>
+      <div class="sv" id="avg-combo">—<small>%</small></div>
+    </div>
+    <div class="sc span2 gold">
+      <div class="sl">종합 전환율 평균 · DB수÷조회수 (영상 본 사람 중 DB 남긴 비율)</div>
+      <div class="sv" id="avg-total">—<small>%</small></div>
+    </div>
+    <div class="sc yellow">
+      <div class="sl">광고 집행 예정</div>
+      <div class="sv" id="ad-count">0<small>개</small></div>
+    </div>
+  </div>
+
+  <!-- 채널 목록 -->
+  <div class="sec-title">채널별 성과</div>
+  <div id="channel-list"></div>
+
+  <button class="add-channel-btn" onclick="addChannel()">
+    <span style="font-size:18px">+</span> 채널 추가
+  </button>
+
+  <p class="hint">채널 이름 클릭 시 수정 가능 · 링크 버튼: 등록 전 입력, 등록 후 클릭 시 열림 (Shift+클릭으로 수정)</p>
+</div>
+
+<!-- 복사 토스트 -->
+<div class="copy-toast" id="copy-toast">🔗 링크 복사됨!</div>
+
+<!-- URL 팝오버 -->
+<div id="url-popover">
+  <div class="pop-label" id="pop-label">URL 입력</div>
+  <input type="url" id="pop-input" placeholder="https://">
+  <div class="pop-actions">
+    <button class="cancel" onclick="closePopover()">취소</button>
+    <button class="confirm" onclick="confirmUrl()">저장</button>
+  </div>
+</div>
+
+<script>
+  /* ─── 상수 ─── */
+  const CHANNEL_COLORS = ['#6c63ff','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
+
+  /* ─── 상태 ─── */
+  let appData = { channels: [] };
+  let popTarget = null; // { chId, videoId, field }
+
+  /* ─── 초기화 ─── */
+  function loadData() {
+    const saved = localStorage.getItem('yt-tracker-v5');
+    if (saved) {
+      appData = JSON.parse(saved);
+    } else {
+      // 이전 버전 데이터 마이그레이션
+      const old = localStorage.getItem('yt-tracker-v4') || localStorage.getItem('yt-tracker-v3');
+      if (old) {
+        const vids = JSON.parse(old);
+        appData = { channels: [{ id: Date.now(), name: '채널 1', videos: Array.isArray(vids) ? vids : [newVideo()] }] };
+      } else {
+        appData = { channels: [newChannel('채널 1')] };
+      }
+    }
+    renderAll();
+  }
+
+  function saveData() {
+    localStorage.setItem('yt-tracker-v5', JSON.stringify(appData));
+  }
+
+  function newChannel(name) {
+    return { id: Date.now() + Math.random(), name: name || '새 채널', videos: [newVideo()] };
+  }
+
+  function newVideo() {
+    return { id: Date.now() + Math.random(), num: '', title: '', ytUrl: '', lpUrl: '', shortUrl: '', type: '', isAd: false, views: '', clicks: '', db: '', updatedAt: null };
+  }
+
+  /* ─── 채널 조작 ─── */
+  function addChannel() {
+    appData.channels.push(newChannel('채널 ' + (appData.channels.length + 1)));
+    saveData();
+    renderAll();
+    setTimeout(() => {
+      const secs = document.querySelectorAll('.channel-section');
+      secs[secs.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }
+
+  function deleteChannel(chId) {
+    const ch = appData.channels.find(c => c.id === chId);
+    if (!ch) return;
+    const hasData = ch.videos.some(v => v.title || v.views || v.clicks || v.db);
+    if (hasData && !confirm(`"${ch.name}" 채널을 삭제할까요?\n영상 ${ch.videos.length}개가 모두 삭제됩니다.`)) return;
+    appData.channels = appData.channels.filter(c => c.id !== chId);
+    if (appData.channels.length === 0) appData.channels.push(newChannel('채널 1'));
+    saveData();
+    renderAll();
+  }
+
+  function updateChannelName(chId, val) {
+    const ch = appData.channels.find(c => c.id === chId);
+    if (ch) { ch.name = val; saveData(); }
+  }
+
+  /* ─── 영상 조작 ─── */
+  function addVideo(chId) {
+    const ch = appData.channels.find(c => c.id === chId);
+    if (!ch) return;
+    const v = newVideo();
+    ch.videos.push(v);
+    saveData();
+    // 행만 추가 (전체 재렌더 없이)
+    const tbody = document.getElementById('tbody-' + chId);
+    if (tbody) {
+      tbody.appendChild(buildRow(chId, v));
+      updateChannelFooter(chId);
+      updateSummary();
+      updateChannelCount(chId);
+    }
+    setTimeout(() => {
+      const row = document.getElementById('row-' + v.id);
+      row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  }
+
+  function deleteVideo(chId, vId) {
+    const ch = appData.channels.find(c => c.id === chId);
+    if (!ch) return;
+    if (ch.videos.length === 1) {
+      ch.videos[0] = newVideo();
+      saveData();
+      const tbody = document.getElementById('tbody-' + chId);
+      if (tbody) {
+        tbody.innerHTML = '';
+        tbody.appendChild(buildRow(chId, ch.videos[0]));
+      }
+    } else {
+      ch.videos = ch.videos.filter(v => v.id !== vId);
+      saveData();
+      document.getElementById('row-' + vId)?.remove();
+    }
+    updateChannelFooter(chId);
+    updateSummary();
+    updateChannelCount(chId);
+  }
+
+  function updateField(chId, vId, field, value) {
+    const ch = appData.channels.find(c => c.id === chId);
+    const v  = ch?.videos.find(v => v.id === vId);
+    if (!v) return;
+    v[field] = value;
+    v.updatedAt = Date.now();
+    saveData();
+    refreshRowCalc(vId);
+    updateChannelFooter(chId);
+    updateSummary();
+  }
+
+  function updateType(chId, vId, sel) {
+    const ch = appData.channels.find(c => c.id === chId);
+    const v  = ch?.videos.find(v => v.id === vId);
+    if (!v) return;
+    v.type = sel.value;
+    v.updatedAt = Date.now();
+    saveData();
+    sel.className = 'type-select ' + typeClass(v.type);
+    document.getElementById('row-' + vId).querySelector('.r-time').textContent = fmtTime(v.updatedAt);
+  }
+
+  function updateAd(chId, vId, checked) {
+    const ch = appData.channels.find(c => c.id === chId);
+    const v  = ch?.videos.find(v => v.id === vId);
+    if (!v) return;
+    v.isAd = checked;
+    v.updatedAt = Date.now();
+    saveData();
+    const row = document.getElementById('row-' + vId);
+    if (row) {
+      row.classList.toggle('is-ad', checked);
+      row.querySelector('.r-time').textContent = fmtTime(v.updatedAt);
+    }
+    updateSummary();
+  }
+
+  /* ─── 계산 ─── */
+  function calcRates(v) {
+    const views  = parseFloat(v.views)  || 0;
+    const clicks = parseFloat(v.clicks) || 0;
+    const db     = parseFloat(v.db)     || 0;
+    const ctr   = views  > 0 ? clicks / views  * 100 : null;
+    const cvr   = clicks > 0 ? db     / clicks * 100 : null;
+    const combo = (ctr !== null || cvr !== null) ? (ctr ?? 0) + (cvr ?? 0) : null;
+    const total = views  > 0 ? db     / views  * 100 : null;
+    return { ctr, cvr, combo, total };
+  }
+
+  function fmt(n)    { if (n === null || !isFinite(n)) return '—'; return n.toFixed(1) + '%'; }
+  function fmtInt(n) { return (n || 0).toLocaleString('ko-KR'); }
+  function fmtTime(ts) {
+    if (!ts) return '';
+    const diff = Math.floor((Date.now() - ts) / 60000);
+    if (diff < 1) return '방금';
+    if (diff < 60) return diff + '분 전';
+    const h = Math.floor(diff / 60);
+    if (h < 24) return h + '시간 전';
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  function typeClass(t) { return t === 'pulling' ? 'pulling' : t === 'key' ? 'key' : 'empty'; }
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+  /* ─── 행 계산값만 갱신 ─── */
+  function refreshRowCalc(vId) {
+    let v;
+    for (const ch of appData.channels) {
+      v = ch.videos.find(x => x.id === vId);
+      if (v) break;
+    }
+    const row = document.getElementById('row-' + vId);
+    if (!v || !row) return;
+    const { ctr, cvr, combo, total } = calcRates(v);
+    row.querySelector('.r-ctr').textContent   = fmt(ctr);
+    row.querySelector('.r-cvr').textContent   = fmt(cvr);
+    row.querySelector('.r-combo').textContent = fmt(combo);
+    row.querySelector('.r-total').textContent = fmt(total);
+    row.querySelector('.r-time').textContent  = fmtTime(v.updatedAt);
+  }
+
+  /* ─── 채널 하단 통계 갱신 ─── */
+  function updateChannelFooter(chId) {
+    const ch = appData.channels.find(c => c.id === chId);
+    const footer = document.getElementById('footer-' + chId);
+    if (!ch || !footer) return;
+    let sumV = 0, sumC = 0, sumD = 0, ctrA = [], cvrA = [], comboA = [];
+    for (const v of ch.videos) {
+      sumV += parseFloat(v.views)  || 0;
+      sumC += parseFloat(v.clicks) || 0;
+      sumD += parseFloat(v.db)     || 0;
+      const { ctr, cvr, combo } = calcRates(v);
+      if (ctr   !== null) ctrA.push(ctr);
+      if (cvr   !== null) cvrA.push(cvr);
+      if (combo !== null) comboA.push(combo);
+    }
+    const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : null;
+    footer.querySelector('.cs-views').textContent = fmtInt(sumV);
+    footer.querySelector('.cs-clicks').textContent = fmtInt(sumC);
+    footer.querySelector('.cs-db').textContent = fmtInt(sumD);
+    footer.querySelector('.cs-ctr').textContent = avg(ctrA) !== null ? avg(ctrA).toFixed(1)+'%' : '—';
+    footer.querySelector('.cs-cvr').textContent = avg(cvrA) !== null ? avg(cvrA).toFixed(1)+'%' : '—';
+    footer.querySelector('.cs-combo').textContent = avg(comboA) !== null ? avg(comboA).toFixed(1)+'%' : '—';
+  }
+
+  function updateChannelCount(chId) {
+    const ch = appData.channels.find(c => c.id === chId);
+    const el = document.getElementById('count-' + chId);
+    if (ch && el) el.textContent = ch.videos.length + '개 영상';
+  }
+
+  /* ─── 전체 요약 갱신 ─── */
+  function updateSummary() {
+    let sumV = 0, sumC = 0, sumD = 0;
+    let ctrA = [], cvrA = [], comboA = [], totA = [];
+    let adCnt = 0;
+    for (const ch of appData.channels) {
+      for (const v of ch.videos) {
+        sumV += parseFloat(v.views)  || 0;
+        sumC += parseFloat(v.clicks) || 0;
+        sumD += parseFloat(v.db)     || 0;
+        if (v.isAd) adCnt++;
+        const { ctr, cvr, combo, total } = calcRates(v);
+        if (ctr   !== null) ctrA.push(ctr);
+        if (cvr   !== null) cvrA.push(cvr);
+        if (combo !== null) comboA.push(combo);
+        if (total !== null) totA.push(total);
+      }
+    }
+    const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : null;
+    const f   = n => n !== null ? n.toFixed(1) : '—';
+    document.getElementById('sum-views').innerHTML  = fmtInt(sumV) + '<small>회</small>';
+    document.getElementById('sum-clicks').innerHTML = fmtInt(sumC) + '<small>회</small>';
+    document.getElementById('sum-db').innerHTML     = fmtInt(sumD) + '<small>건</small>';
+    document.getElementById('avg-ctr').innerHTML    = f(avg(ctrA))   + '<small>%</small>';
+    document.getElementById('avg-cvr').innerHTML    = f(avg(cvrA))   + '<small>%</small>';
+    document.getElementById('avg-combo').innerHTML  = f(avg(comboA)) + '<small>%</small>';
+    document.getElementById('avg-total').innerHTML  = f(avg(totA))   + '<small>%</small>';
+    document.getElementById('ad-count').innerHTML   = adCnt          + '<small>개</small>';
+  }
+
+  /* ─── 전체 렌더 ─── */
+  function renderAll() {
+    const list = document.getElementById('channel-list');
+    list.innerHTML = '';
+    appData.channels.forEach((ch, idx) => list.appendChild(buildChannelSection(ch, idx)));
+    updateSummary();
+  }
+
+  function buildChannelSection(ch, idx) {
+    const color = CHANNEL_COLORS[idx % CHANNEL_COLORS.length];
+    const sec = document.createElement('div');
+    sec.className = 'channel-section';
+    sec.id = 'ch-' + ch.id;
+
+    // 헤더
+    const header = document.createElement('div');
+    header.className = 'channel-header';
+    header.style.borderBottomColor = color;
+    header.innerHTML = `
+      <div class="channel-dot" style="background:${color}"></div>
+      <div class="channel-name-wrap">
+        <input class="channel-name-input"
+          value="${esc(ch.name)}"
+          placeholder="채널 이름"
+          oninput="updateChannelName(${ch.id}, this.value)"
+          title="클릭해서 채널 이름 수정">
+        <span class="channel-count" id="count-${ch.id}">${ch.videos.length}개 영상</span>
+      </div>
+      <button class="ch-add-btn" onclick="addVideo(${ch.id})">+ 영상 추가</button>
+      <button class="ch-del-btn" onclick="deleteChannel(${ch.id})">채널 삭제</button>
+    `;
+
+    // 테이블
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'table-wrap';
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead><tr>
+        <th class="s1" style="width:52px;min-width:52px">#</th>
+        <th class="s2" style="min-width:150px;text-align:left;padding-left:12px">영상 제목</th>
+        <th title="유튜브 링크">YT</th>
+        <th title="랜딩페이지 링크">LP</th>
+        <th style="min-width:100px" title="클릭 시 복사 (이동 안됨)">단축 URL</th>
+        <th style="min-width:112px">콘텐츠 유형</th>
+        <th style="min-width:48px" title="광고 집행">광고</th>
+        <th style="min-width:84px">조회수</th>
+        <th style="min-width:74px">클릭수</th>
+        <th class="h-blue"   style="min-width:88px">링크 클릭률</th>
+        <th style="min-width:64px">DB수</th>
+        <th class="h-orange" style="min-width:100px">1차 전환율(DB)</th>
+        <th class="h-violet" style="min-width:80px">합산</th>
+        <th class="h-gold"   style="min-width:76px">종합</th>
+        <th style="min-width:76px">업데이트</th>
+        <th style="width:36px"></th>
+      </tr></thead>
+    `;
+    const tbody = document.createElement('tbody');
+    tbody.id = 'tbody-' + ch.id;
+    ch.videos.forEach(v => tbody.appendChild(buildRow(ch.id, v)));
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+
+    // 채널 하단 통계
+    const footer = document.createElement('div');
+    footer.className = 'channel-footer';
+    footer.id = 'footer-' + ch.id;
+    footer.innerHTML = `
+      <div class="ch-stat"><div class="cs-label">조회수</div><div class="cs-val cs-views">—</div></div>
+      <div class="ch-stat"><div class="cs-label">링크 클릭수</div><div class="cs-val cs-clicks">—</div></div>
+      <div class="ch-stat"><div class="cs-label">DB 수집</div><div class="cs-val cs-db">—</div></div>
+      <div class="ch-stat blue"><div class="cs-label">평균 클릭률</div><div class="cs-val cs-ctr">—</div></div>
+      <div class="ch-stat orange"><div class="cs-label">평균 1차 전환율</div><div class="cs-val cs-cvr">—</div></div>
+      <div class="ch-stat violet"><div class="cs-label">평균 합산</div><div class="cs-val cs-combo">—</div></div>
+    `;
+
+    sec.appendChild(header);
+    sec.appendChild(tableWrap);
+    sec.appendChild(footer);
+    updateChannelFooter(ch.id);
+    return sec;
+  }
+
+  function buildRow(chId, v) {
+    const { ctr, cvr, combo, total } = calcRates(v);
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + v.id;
+    if (v.isAd) tr.classList.add('is-ad');
+
+    tr.innerHTML = `
+      <td class="s1 num-cell ic">
+        <input class="cell-input" type="text" maxlength="6" placeholder="—"
+          value="${esc(v.num)}"
+          oninput="updateField(${chId},${v.id},'num',this.value)"
+          style="text-align:center;font-size:12px;color:#888;width:52px;padding:12px 4px">
+      </td>
+      <td class="s2 title-cell ic">
+        <input class="cell-input left" type="text" placeholder="영상 제목 입력"
+          value="${esc(v.title)}"
+          oninput="updateField(${chId},${v.id},'title',this.value)">
+      </td>
+      <td class="link-cell">
+        <button class="link-btn ${v.ytUrl?'set':''}" title="${v.ytUrl||'유튜브 링크 입력'}"
+          onclick="openPopover(event,${chId},${v.id},'ytUrl','유튜브 영상 링크')">${v.ytUrl?'▶':'+'}</button>
+      </td>
+      <td class="link-cell">
+        <button class="link-btn ${v.lpUrl?'set':''}" title="${v.lpUrl||'랜딩페이지 링크 입력'}"
+          onclick="openPopover(event,${chId},${v.id},'lpUrl','랜딩페이지 링크')">${v.lpUrl?'🔗':'+'}</button>
+      </td>
+      <td class="short-url-cell">
+        ${v.shortUrl
+          ? `<button class="short-url-btn" id="sub-${v.id}"
+               onclick="copyShortUrl(event,${chId},${v.id})"
+               title="클릭하면 복사됩니다 (이동 안됨)">${v.shortUrl}</button>`
+          : `<button class="short-url-btn empty"
+               onclick="openPopover(event,${chId},${v.id},'shortUrl','단축 URL')"
+               title="단축 URL 입력">+ URL</button>`
+        }
+      </td>
+      <td class="type-cell">
+        <select class="type-select ${typeClass(v.type)}"
+          onchange="updateType(${chId},${v.id},this)">
+          <option value="" ${!v.type?'selected':''}>유형 선택</option>
+          <option value="pulling" ${v.type==='pulling'?'selected':''}>풀링 콘텐츠</option>
+          <option value="key"     ${v.type==='key'    ?'selected':''}>키 콘텐츠</option>
+        </select>
+      </td>
+      <td class="ad-cell">
+        <label class="ad-label">
+          <input type="checkbox" ${v.isAd?'checked':''}
+            onchange="updateAd(${chId},${v.id},this.checked)">
+          <div class="ad-check-box"></div>
+        </label>
+      </td>
+      <td class="ic">
+        <input class="cell-input" type="number" placeholder="0"
+          value="${v.views||''}"
+          oninput="updateField(${chId},${v.id},'views',this.value)"
+          style="min-width:84px">
+      </td>
+      <td class="ic">
+        <input class="cell-input" type="number" placeholder="0"
+          value="${v.clicks||''}"
+          oninput="updateField(${chId},${v.id},'clicks',this.value)"
+          style="min-width:74px">
+      </td>
+      <td class="calc-cell blue r-ctr">${fmt(ctr)}</td>
+      <td class="ic">
+        <input class="cell-input" type="number" placeholder="0"
+          value="${v.db||''}"
+          oninput="updateField(${chId},${v.id},'db',this.value)"
+          style="min-width:64px">
+      </td>
+      <td class="calc-cell orange r-cvr">${fmt(cvr)}</td>
+      <td class="calc-cell violet r-combo">${fmt(combo)}</td>
+      <td class="calc-cell gold r-total">${fmt(total)}</td>
+      <td class="updated-cell r-time">${fmtTime(v.updatedAt)}</td>
+      <td class="del-cell">
+        <button class="del-btn" title="이 영상 삭제" onclick="deleteVideo(${chId},${v.id})">✕</button>
+      </td>
+    `;
+    return tr;
+  }
+
+  /* ─── 단축 URL 복사 ─── */
+  let toastTimer = null;
+
+  function copyShortUrl(e, chId, vId) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ch = appData.channels.find(c => c.id === chId);
+    const v  = ch?.videos.find(v => v.id === vId);
+    if (!v?.shortUrl) return;
+
+    // 클립보드 복사
+    navigator.clipboard.writeText(v.shortUrl).then(() => {
+      // 버튼 피드백
+      const btn = document.getElementById('sub-' + vId);
+      if (btn) {
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
+      }
+      // 토스트
+      const toast = document.getElementById('copy-toast');
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }).catch(() => {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = v.shortUrl;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      const toast = document.getElementById('copy-toast');
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    });
+  }
+
+  /* ─── URL 팝오버 ─── */
+  function openPopover(e, chId, vId, field, label) {
+    e.stopPropagation();
+    const ch = appData.channels.find(c => c.id === chId);
+    const v  = ch?.videos.find(v => v.id === vId);
+    if (!v) return;
+    if (v[field] && !e.shiftKey) { window.open(v[field], '_blank'); return; }
+    popTarget = { chId, vId, field };
+    document.getElementById('pop-label').textContent = label + (v[field] ? ' 수정' : ' 입력');
+    document.getElementById('pop-input').value = v[field] || '';
+    const pop = document.getElementById('url-popover');
+    pop.style.display = 'block';
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popW = 300;
+    let left = rect.left;
+    if (left + popW > window.innerWidth - 12) left = window.innerWidth - popW - 12;
+    pop.style.left = left + 'px';
+    pop.style.top  = (rect.bottom + window.scrollY + 8) + 'px';
+    setTimeout(() => document.getElementById('pop-input').focus(), 50);
+  }
+
+  function confirmUrl() {
+    if (!popTarget) return;
+    const { chId, vId, field } = popTarget;
+    const val = document.getElementById('pop-input').value.trim();
+    updateField(chId, vId, field, val);
+    const row = document.getElementById('row-' + vId);
+    if (row) {
+      if (field === 'shortUrl') {
+        // 단축 URL 셀 통째로 교체
+        const cell = row.querySelector('.short-url-cell');
+        if (cell) {
+          if (val) {
+            cell.innerHTML = `<button class="short-url-btn" id="sub-${vId}"
+              onclick="copyShortUrl(event,${chId},${vId})"
+              title="클릭하면 복사됩니다 (이동 안됨)">${val}</button>`;
+          } else {
+            cell.innerHTML = `<button class="short-url-btn empty"
+              onclick="openPopover(event,${chId},${vId},'shortUrl','단축 URL')"
+              title="단축 URL 입력">+ URL</button>`;
+          }
+        }
+      } else {
+        const btns = row.querySelectorAll('.link-btn');
+        const idx  = field === 'ytUrl' ? 0 : 1;
+        btns[idx].textContent = val ? (idx === 0 ? '▶' : '🔗') : '+';
+        btns[idx].className   = 'link-btn' + (val ? ' set' : '');
+        btns[idx].title       = val || (idx === 0 ? '유튜브 링크 입력' : '랜딩페이지 링크 입력');
+      }
+    }
+    closePopover();
+  }
+
+  function closePopover() {
+    document.getElementById('url-popover').style.display = 'none';
+    popTarget = null;
+  }
+
+  document.getElementById('pop-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmUrl();
+    if (e.key === 'Escape') closePopover();
+  });
+  document.addEventListener('click', e => {
+    if (!document.getElementById('url-popover').contains(e.target)) closePopover();
+  });
+
+  loadData();
+</script>
+</body>
+</html>
